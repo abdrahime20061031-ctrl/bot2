@@ -1,17 +1,14 @@
-import os  # تصحيح: الحرف الأول يجب أن يكون صغير (o) وليس كبير (O)
+import os
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # ==========================================
-# إعدادات
+# 1. إعدادات البوت والدروس
 # ==========================================
-# ملاحظة: تأكد من إضافة BOT_TOKEN في Environment Variables في Render
+# تأكد من إضافة BOT_TOKEN في Environment Variables في Render
 TOKEN = os.environ.get("8507097163:AAFFUKzBzYLeE9HAgT-M-xj9SSkfRDu3Mjg") 
-
-# في حال كنت تريد تجربة الكود محلياً قبل رفعه، يمكنك وضع التوكن مباشرة مؤقتاً:
-# TOKEN = "8507097163:AAFFUKzBzYLeE9HAgT-M-xj9SSkfRDu3Mjg"
 
 LESSONS = {
     "logic": {
@@ -29,17 +26,14 @@ LESSONS = {
 }
 
 # ==========================================
-# سيرفر Render لضمان عدم توقف البوت
+# 2. سيرفر Render (لحل مشكلة No open ports)
 # ==========================================
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot is alive!")
-
-    # إضافة هذه الدالة لتجنب ظهور أخطاء في الـ Logs عند محاولة السيرفر الوصول للبوت
-    def log_message(self, format, *args):
-        return
+        self.wfile.write(b"YCan Bot is Alive and Running!")
+    def log_message(self, format, *args): return # لتقليل الرسائل في الـ Logs
 
 def run_web_server():
     port = int(os.environ.get("PORT", 8080))
@@ -48,7 +42,7 @@ def run_web_server():
     server.serve_forever()
 
 # ==========================================
-# واجهات الأزرار
+# 3. واجهات القوائم
 # ==========================================
 def main_menu():
     keyboard = [
@@ -60,16 +54,14 @@ def main_menu():
     return InlineKeyboardMarkup(keyboard)
 
 def back_menu():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 رجوع للقائمة الرئيسية", callback_query_data='back')]
-    ])
+    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع للقائمة", callback_query_data='back')]])
 
 # ==========================================
-# الأوامر والتعامل مع الأحداث
+# 4. الأوامر ومعالجة الأزرار
 # ==========================================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    text = f"✨ أهلاً {user.first_name} ✨\n\n🎓 مرحباً بك في بوت MI L1\n📚 اختر المادة من الأسفل:"
+    text = f"✨ أهلاً {user.first_name} ✨\n\n🎓 مرحباً بك في بوت MI L1\n📚 اختر المادة المطلوبة:"
     await update.message.reply_text(text, reply_markup=main_menu())
 
 async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -83,29 +75,26 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data in LESSONS:
         lesson = LESSONS[data]
-        text = f"📌 {lesson['title']}\n\n🔗 رابط الدروس:\n{lesson['link']}\n\n🤖 مبرمج بواسطة: Abderahime Mansouri"
+        text = f"📌 {lesson['title']}\n\n🔗 رابط الدروس:\n{lesson['link']}\n\n🤖 مبرمج بواسطة: YCan"
         await query.edit_message_text(text=text, reply_markup=back_menu())
 
 # ==========================================
-# التشغيل الرئيسي
+# 5. دالة التشغيل الرئيسية
 # ==========================================
 def main():
-    # التحقق من وجود التوكن لتجنب انهيار البوت
     if not TOKEN:
-        print("❌ Error: BOT_TOKEN not found in environment variables!")
+        print("❌ Error: BOT_TOKEN not found!")
         return
 
-    # تشغيل السيرفر في الخلفية
+    # تشغيل السيرفر الوهمي في خيط منفصل (مهم جداً لـ Render)
     threading.Thread(target=run_web_server, daemon=True).start()
 
-    # إعداد البوت
+    # تشغيل البوت
     app = Application.builder().token(TOKEN).build()
-
-    # إضافة المعالجات
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(handle_buttons))
 
-    print("🚀 Bot is running and ready for Constantine 2 Students...")
+    print("🚀 البوت انطلق بنجاح...")
     app.run_polling()
 
 if __name__ == "__main__":
